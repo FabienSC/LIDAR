@@ -154,12 +154,13 @@ void loop()
           webScanPage(client, 0);//display "scanning: 0%"
 
           scan(vlow, vhigh, hright, hleft);
+
           
+          /////////////////////////////////////////////////////////////////////////////////
           boolean myFlag = 0;
           int myInt = 0;
           cntr = 0;
-          /////////////////////////////////////////////////////////////////////////////////
-          while(myFlag)
+          /*while(myFlag)//scanning 0% ... 100%
           {
             delay(10);
             Serial.println(myInt);
@@ -174,7 +175,7 @@ void loop()
               if(cntr > 99)
                 myFlag = 0;
             }
-          }
+          }*/
           
         }
         else

@@ -10,6 +10,14 @@ void scan(char vl, char vh, char hl, char hh)//moves the servos and measures dis
   hpoints = hh - hl + 1;//number of points per line
   int couleur [hpoints*vpoints];
   int colindex [8 * ((hpoints -1) * (vpoints -1)) - 1 ]; //nombre de coins dans les faces + espaces entre les faces
+
+  int d;
+  for (int i = 0; i<15; i++) // take 15 dummy reading to "warm up" the sensor
+  {
+    d = (2*myLidarLite.distance()+8*d)/10;
+    delay(5);
+  }
+  delay (5);//tiny delay
   
   for (int v=vl; v<vh+1; v +=1)
   {

@@ -4,3 +4,9 @@
     d = (2*myLidarLite.distance()+8*d)/10;
     delay(5);
   }*/
+
+
+  
+        EthernetClient client = server.available();
+          if(clientRequest(client))
+            webScanPage(client, h);//progress update
