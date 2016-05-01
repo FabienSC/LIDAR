@@ -57,7 +57,6 @@ int temp = 0;
 int pstep = 0;
 
 
-
 void setup()//#######################
 {
   Serial.begin(115200);
@@ -82,8 +81,6 @@ void setup()//#######################
   // Debugging complete, we start the server!
   Ethernet.begin(mac, ip);
   server.begin();
-
-  //avgFilter = d;
 }
 
 // How big our line buffer should be. 100 is plenty!
@@ -154,34 +151,9 @@ void loop()
           webScanPage(client, 0);//display "scanning: 0%"
 
           scan(vlow, vhigh, hright, hleft);
-
-          
-          /////////////////////////////////////////////////////////////////////////////////
-          boolean myFlag = 0;
-          int myInt = 0;
-          cntr = 0;
-          /*while(myFlag)//scanning 0% ... 100%
-          {
-            delay(10);
-            Serial.println(myInt);
-            myInt++;
-
-            EthernetClient client = server.available();
-            if(clientRequest(client))
-            {
-              cntr += 10;
-              webScanPage(client, cntr);
-              
-              if(cntr > 99)
-                myFlag = 0;
-            }
-          }*/
-          
         }
         else
-        {
           web404(client);// everything else is a 404
-        }
         break;
       }
     }
