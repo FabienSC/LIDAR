@@ -1,17 +1,31 @@
 void scan(int vl, int vh, int hl, int hh, EthernetClient client)//moves the servos and measures distance v:vertical, h: horizontal, l:low point, h: high point
 {
+ crs = 0; //comma removal system =D
+ zmin = 4000;
+ zmax = 0;
+ dir = 0;
+ pstep = 0;
+ pstep = 0;
+
+int medianFilter[5];
+int previousD = -9999;
+
   if(SD.remove(FILE_NAME))//delete previous file (if any)
     Serial.println("Removed previous file");  
+  if(SD.remove(FILE_TMP))//delete previous file (if any)
+      Serial.println("Removed previous tmp");  
     
   myFile = SD.open(FILE_NAME, FILE_WRITE);//open file for writing
+  myTmpFile = SD.open(FILE_TMP, FILE_WRITE);//open file for writing
   vrmlHeader();//write header
   
   vpoints = vh - vl + 1;//number of points per collumn
   hpoints = hh - hl + 1;//number of points per line
+  Serial.println(hpoints*vpoints);
   
   float couleur [hpoints*vpoints];
-  int colindex [8 * ((hpoints -1) * (vpoints -1)) - 1 ]; //nombre de coins dans les faces + espaces entre les faces
-
+  char color [hpoints*vpoints];
+  
   int d;
   for (int i = 0; i<15; i++) // take 15 dummy reading to "warm up" the sensor
   {
@@ -38,8 +52,7 @@ void scan(int vl, int vh, int hl, int hh, EthernetClient client)//moves the serv
          zmax = z;
         if (z<zmin)
          zmin = z;
-        couleur [cmp]= z;
-        cmp++;
+        myTmpFile.println(z);
       }
          // webScanPage(client, ((v-vl)*100)/(vh-vl));//try to update webpage
     }
@@ -54,56 +67,84 @@ void scan(int vl, int vh, int hl, int hh, EthernetClient client)//moves the serv
          zmax = z;
         if (z<zmin)
          zmin = z;
-        couleur [cmp]= z;
-        cmp++;
-        
+        myTmpFile.println(z);
       }
        //   webScanPage(client, ((v-vl)*100)/(vh-vl));//try to update webpage
     }
     dir = !dir;//toggle dir
   }
+
+  myTmpFile.close();
+  myTmpFile = SD.open(FILE_TMP, FILE_READ);//open file for reading
+  char fileContents[10];
+  byte index;
+  char readChar;
   
+    pstep = (zmax - zmin)/nb_step;
+    for (int n=0; n < (hpoints * vpoints); n++)
+    {
+      int tmp = 8888;
+      
+      fileContents[0] = '\0';
+      index = 0;
+      readChar = 'F';//not '\n' nor '\r'
+      
+      while ((readChar != '\n' && readChar != '\r')) 
+      {
+        readChar = myTmpFile.read();
+        if(readChar != '\n' && readChar != '\r')
+        {
+          fileContents[index++] = readChar;
+          fileContents[index] = '\0'; // NULL terminate the array
+        }
+        else // the character is CR or LF ('\n' or '\r')
+        {
+          
+        readChar = myTmpFile.read();//get rid of second '\n' or '\r'
+          if(strlen(fileContents) > 0)
+          {
+            float tmpFloat = atof(fileContents);
+            //do stuff//
+            for(int i = 0; i < nb_step; i++)
+            {
+              if ((tmpFloat > ((zmin + i*pstep)-0.01)) && (tmpFloat < ((zmin + (i+1)*pstep)+0.01)))
+              {
+                tmp = i;
+              }
+            }
+          }
+        }
+       }
+      color[n] = tmp;
+    }
+      
   if (myFile)
   {
-    myFile.println("         ]");//close point
-    myFile.println("      }");//close Coordinate
+    myFile.println(" ]");//close point
+    myFile.println(" }");//close Coordinate
     
     //       ### coordIndex [] TO MAKE TRIANGLES ###
     myFile.println("coordIndex [");
-    int k=0; //compte combien de cases de colindex sont remplies
+    
     for (int line = 0; line < vpoints-1; line++)
     {
       int offset = line * hpoints;
       for(int i = 1; i < hpoints; i++)
       {
         myFile.print(i + offset);
-        colindex[k++] = i + offset;
-        //Serial.println(colindex[k-1]);
         myFile.print(" ");
         myFile.print(2 * hpoints - i + offset);
-        colindex[k++] = 2 * hpoints - i + offset;
         myFile.print(" ");
         myFile.print(2 * hpoints - i - 1 + offset);
-        colindex[k++] = 2 * hpoints - i - 1 + offset;
-        //Serial.println(colindex[k-1]);
         myFile.print(" ");
         myFile.print("-1, ");
-        colindex[k++]= 0;
-        //Serial.println(colindex[k-1]);
         //
         myFile.print(i - 1 + offset);
-        colindex[k++] = i - 1 + offset;
-        //Serial.println(colindex[k-1]);
         myFile.print(" ");
         myFile.print(i + offset);
-        colindex[k++] = i + offset;
-        //Serial.println(colindex[k-1]);
         myFile.print(" ");
         myFile.print(2 * hpoints - i + offset);
-        colindex[k++] = 2 * hpoints - i + offset;
-        //Serial.println(colindex[k-1]);
         myFile.print(" ");
-        colindex[k++]= 0;
         
         if((line == (vpoints - 2)) && (i == hpoints - 1))//Last Data Point ### UPDATE ###
           myFile.print("-1");
@@ -125,50 +166,32 @@ void scan(int vl, int vh, int hl, int hh, EthernetClient client)//moves the serv
    
     //       ### colorIndex {} ###
     myFile.println("colorIndex [ ");
-    pstep = (zmax - zmin)/nb_step;//
-        Serial.print("zmax:");
-        Serial.println(zmax);
-        Serial.print("zmin:");
-        Serial.println(zmin);
-        Serial.print("pstep:");
-        Serial.println(pstep);
-    for (int n=0; n < (hpoints * vpoints); n++)
+
+for (int line = 0; line < vpoints-1; line++)
     {
-      int tmp = 8888;
-      Serial.print("couleur[");
-      Serial.print(n);
-      Serial.print("]: ");
-      Serial.print(couleur[n]);
-      Serial.print("\t-> ");
-      for(int i = 0; i < nb_step; i++)
+      int offset = line * hpoints;
+      for(int i = 1; i < hpoints; i++)
       {
-        if ((couleur[n] > ((zmin + i*pstep)-0.01)) && (couleur[n] < ((zmin + (i+1)*pstep)+0.01)))
-         {
-          tmp = i;
-         }
-      }
-      couleur[n] = tmp;
-      Serial.println(couleur[n]);
-    }
-
-    int colorfilter = 0;
-    
-    for (int l=0; l <  (8 * ((hpoints -1) * (vpoints -1)) ); l++)
-    {
-//        if ((colindex[l] > 4) || (colindex[l] < 0))
-//          colindex[l] = couleur[colindex[l] - 1];
-
-        Serial.print("colindex : ");
-        Serial.print(colindex[l]);
-        colindex[l] = couleur[colindex[l]];
-        /*if (abs(colindex[l] - colorfilter) > nb_step)//???
-          colindex[l] = colorfilter;
-          colorfilter = colindex[l];*/
-        Serial.print("\tcolindex : ");
-        Serial.println(colindex[l]);
-        myFile.print(colindex[l]);
+        myFile.print((int)color[i + offset]);
         myFile.print(" ");
+        myFile.print((int)color[2 * hpoints - i + offset]);
+        myFile.print(" ");
+        myFile.print((int)color[2 * hpoints - i - 1 + offset]);
+        myFile.print(" ");
+        myFile.print((int)color[0]);
+        myFile.print(" ");
+        
+        myFile.print((int)color[i - 1 + offset]);
+        myFile.print(" ");
+        myFile.print((int)color[i + offset]);
+        myFile.print(" ");
+        myFile.print((int)color[2 * hpoints - i + offset]);
+        myFile.print(" ");
+        myFile.print((int)color[0]);
+        myFile.print(" ");
+      }
     }
+    
     myFile.println("]");
 
     //    ### colorIndex {} ###
@@ -176,24 +199,20 @@ void scan(int vl, int vh, int hl, int hh, EthernetClient client)//moves the serv
     myFile.println("   }\n}");
     myFile.close();
   }
+
+  Serial.println("#Scan Complete#");
 }
 
 
 void measureDist(int v, int h)//measure distance and store it to SD card
 {
-
   int d = myLidarLite.distance();
   if ((d - previousD) > 50)//if bigger than 50cm
     {
-      Serial.print("Median filter:");
       for(int i = 0; i < 5; i++)
       {
         medianFilter[i] = myLidarLite.distance();
-        Serial.println(medianFilter[i]);
       }
-      
-      Serial.println("------ ------ ------");
-
       for(int i = 4; i > 0; i--)
         for(int j = 0; j < i; j++)
             if(medianFilter[j] > medianFilter[j+1])
@@ -202,14 +221,6 @@ void measureDist(int v, int h)//measure distance and store it to SD card
                 medianFilter[j] = medianFilter[j+1];
                 medianFilter[j+1] = tmp;
               }
-
-      Serial.println(medianFilter[0]);
-      Serial.println(medianFilter[1]);
-      Serial.println(medianFilter[2]);
-      Serial.println(medianFilter[3]);
-      Serial.println(medianFilter[4]);
-      Serial.println("--------------------");
-      
       d = medianFilter[2];//take the median value
     }
     previousD = d;
@@ -217,28 +228,24 @@ void measureDist(int v, int h)//measure distance and store it to SD card
   Serial.print(h);
   Serial.print(" - ");
   Serial.print(v);
-  Serial.print(" : ");
+  Serial.print(" / d = ");
   spatialTransform(v,h,d);
   
   Serial.println(d);
-  //Serial.println(avgFilter);
   if (myFile)
   {
- Serial.println(10);
- Serial.print("\t");
- Serial.print(x/10.0);
- Serial.print("\t");
- Serial.print(y/10.0);
- Serial.print("\t");
- Serial.print((z)/10.0);//put central point in the 0,0,0 position
+    Serial.print("\t");
+    Serial.print(x/10.0);
+    Serial.print("\t");
+    Serial.print(y/10.0);
+    Serial.print("\t");
+    Serial.println((z)/10.0);//put central point in the 0,0,0 position
     myFile.print("\t");
     myFile.print(-x/10.0);
     myFile.print("\t");
     myFile.print(y/10.0);
     myFile.print("\t");
     myFile.print(z/10.0);//put central point in the 0,0,0 position
-    
- Serial.println(11);
     
     if(((h == hleft)||(h == hright)) && (v == (vhigh-5)))//Last Data Point ### UPDATE ###
     {
@@ -252,7 +259,6 @@ void measureDist(int v, int h)//measure distance and store it to SD card
   }
   else
     Serial.println("error opening file");
-  Serial.println(8);
 }
 
 void spatialTransform(int v, int h, int d)//transform polar coordinates to cartesian ones
