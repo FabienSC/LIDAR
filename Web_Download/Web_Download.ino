@@ -12,7 +12,7 @@
 
 #define SERVOH_PIN 8  //Horizontal servo's pin
 #define SERVOV_PIN 9  //Vertical servo's pin
-#define SCAN_SPEED 15 //1 = fast, 10 = slow
+#define SCAN_SPEED 10 //1 = fast, 20 = slow
 #define SERVOH_MID 90  
 #define SERVOV_MID 95
 
@@ -27,7 +27,7 @@ EthernetServer server(80);
 /************* LIDAAR and Servo stuff ************/
 LIDARLite myLidarLite;
 Servo servoH; //Horizontal servo  --min-mid-max: 0 -90-180  right - left
-Servo servoV; //Vertical servo    --min-mid-max: 85-95-180  down  - up
+Servo servoV; //Vertical servo    --min-mid-max: 85-95-169  down  - up
 
 
 /************* SD card stuff ************/
@@ -43,7 +43,7 @@ float x = 0, y = 0, z = 0;
 char vpoints = 0, hpoints = 0;
 
 
-char vlow = 95, vhigh = 109, hright = 95, hleft = 109; //scan area
+int vlow = 95, vhigh = 105, hright = 90, hleft = 109; //scan area
 boolean crs = 0; //comma removal system =D
 int zCenter = 0; //offset to center the object in the VRML viewer
 int avgFilter = 0;
@@ -55,6 +55,9 @@ boolean dir = 0;
 int cmp = 0;
 int temp = 0;
 int pstep = 0;
+
+int medianFilter[5];
+int previousD = -9999;
 
 
 void setup()//#######################
@@ -133,24 +136,32 @@ void loop()
           
           if (!myFile)
           {
+            Serial.println("!myFile error");
             webScanOnly(client);
             break;
           }
           
-          webFileDownload(client);
+          client.println("HTTP/1.1 200 OK");
+          client.println("Content-Type: model/vrml");//Allows the browser to view directly?
+          client.println("Content-Disposition: attachment; filename=\"LIDAR.wrl\"");
+          client.println();
           
+          Serial.println("downloading");
           while (myFile.available())
             client.print((char)myFile.read());
           
           myFile.close();
+          
+          delay(1);
+          client.stop();
         }
         else if (clientline[6] == '3')//3D scan
         {
           //Program stays in this loop until scan is complete
-          
-          webScanPage(client, 0);//display "scanning: 0%"
+          Serial.println("Scan called");
+          webScanPage(client, 88);//display "scanning: 0%"
 
-          scan(vlow, vhigh, hright, hleft);
+          scan(vlow, vhigh, hright, hleft, client);//also pass client so it can update the webpage
         }
         else
           web404(client);// everything else is a 404

@@ -130,17 +130,11 @@ void WebScanComplete(EthernetClient client)
   client.stop();
 }
 
-void webFileDownload(EthernetClient client)
+/*void webFileDownload(EthernetClient client)
 {
-  client.println("HTTP/1.1 200 OK");
-  client.println("Content-Type: model/vrml");//Allows the browser to view directly?
-  client.println("Content-Disposition: attachment; filename=\"LIDAR.wrl\"");
-  client.println();
   
-  delay(1);
-  client.stop();
 }
-
+*/
 void web404(EthernetClient client)
 {
   client.println("HTTP/1.1 404 Not Found");

@@ -1,11 +1,11 @@
-void scan(char vl, char vh, char hl, char hh)//moves the servos and measures distance v:vertical, h: horizontal, l:low point, h: high point
+void scan(int vl, int vh, int hl, int hh, EthernetClient client)//moves the servos and measures distance v:vertical, h: horizontal, l:low point, h: high point
 {
   if(SD.remove(FILE_NAME))//delete previous file (if any)
     Serial.println("Removed previous file");  
     
   myFile = SD.open(FILE_NAME, FILE_WRITE);//open file for writing
   vrmlHeader();//write header
-
+  
   vpoints = vh - vl + 1;//number of points per collumn
   hpoints = hh - hl + 1;//number of points per line
   int couleur [hpoints*vpoints];
@@ -18,11 +18,13 @@ void scan(char vl, char vh, char hl, char hh)//moves the servos and measures dis
     delay(5);
   }
   delay (5);//tiny delay
+
+  Serial.println("About to scan...");
   
   for (int v=vl; v<vh+1; v +=1)
   {
     servoWrite('V',v);
-    delay(20*SCAN_SPEED);
+    delay(10*SCAN_SPEED);
      
     if (!dir)//if dir = 0
     {
@@ -38,6 +40,7 @@ void scan(char vl, char vh, char hl, char hh)//moves the servos and measures dis
         couleur [cmp]= z;
         cmp++;
       }
+          webScanPage(client, ((v-vl)*100)/(vh-vl));//try to update webpage
     }
     else
     {
@@ -50,18 +53,12 @@ void scan(char vl, char vh, char hl, char hh)//moves the servos and measures dis
          zmax = z;
         if (z<zmin)
          zmin = z;
-        pstep = (zmax - zmin)/nb_step;
+        couleur [cmp]= z;
         cmp++;
         
       }
+          webScanPage(client, ((v-vl)*100)/(vh-vl));//try to update webpage
     }
-    //if (z>zmax)
-    //  zmax = z;
-    //if (z<zmin)
-    //  zmin = z;
-    //pstep = (zmax - zmin)/nb_step;
-    //couleur [cmp]= z;
-    //cmp++;
     dir = !dir;//toggle dir
   }
   
@@ -174,13 +171,38 @@ void scan(char vl, char vh, char hl, char hh)//moves the servos and measures dis
 void measureDist(int v, int h)//measure distance and store it to SD card
 {
 
- Serial.println(7);
   int d = myLidarLite.distance();
-  
-//  if(abs(d-avgFilter)>500)//if the new value sticks out too much (over 5 meters from the previous values)
-//    d = avgFilter;
-//  avgFilter = (avgFilter*8 + 2*d)/10;
+  if ((d - previousD) > 50)//if bigger than 50cm
+    {
+      Serial.print("Median filter:");
+      for(int i = 0; i < 5; i++)
+      {
+        medianFilter[i] = myLidarLite.distance();
+        Serial.println(medianFilter[i]);
+      }
+      
+      Serial.println("------ ------ ------");
 
+      for(int i = 4; i > 0; i--)
+        for(int j = 0; j < i; j++)
+            if(medianFilter[j] > medianFilter[j+1])
+              {
+                int tmp = medianFilter[j];
+                medianFilter[j] = medianFilter[j+1];
+                medianFilter[j+1] = tmp;
+              }
+
+      Serial.println(medianFilter[0]);
+      Serial.println(medianFilter[1]);
+      Serial.println(medianFilter[2]);
+      Serial.println(medianFilter[3]);
+      Serial.println(medianFilter[4]);
+      Serial.println("--------------------");
+      
+      d = medianFilter[2];//take the median value
+    }
+    previousD = d;
+  
   Serial.print(h);
   Serial.print(" - ");
   Serial.print(v);
@@ -193,17 +215,17 @@ void measureDist(int v, int h)//measure distance and store it to SD card
   {
  Serial.println(10);
  Serial.print("\t");
- Serial.print(-x);
+ Serial.print(x/10.0);
  Serial.print("\t");
- Serial.print(y);
+ Serial.print(y/10.0);
  Serial.print("\t");
- Serial.print(-z+zCenter);//put central point in the 0,0,0 position
+ Serial.print((z)/10.0);//put central point in the 0,0,0 position
     myFile.print("\t");
-    myFile.print(-x);
+    myFile.print(-x/10.0);
     myFile.print("\t");
-    myFile.print(y);
+    myFile.print(y/10.0);
     myFile.print("\t");
-    myFile.print(-z+zCenter);//put central point in the 0,0,0 position
+    myFile.print((z)/10.0);//put central point in the 0,0,0 position
     
  Serial.println(11);
     
@@ -221,7 +243,6 @@ void measureDist(int v, int h)//measure distance and store it to SD card
     Serial.println("error opening file");
   Serial.println(8);
 }
-
 
 void spatialTransform(int v, int h, int d)//transform polar coordinates to cartesian ones
 {
