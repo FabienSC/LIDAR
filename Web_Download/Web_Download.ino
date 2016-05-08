@@ -40,21 +40,22 @@ const int chipSelect = 4;
 //////////////////
 int cntr = 0;
 float x = 0, y = 0, z = 0;
-char vpoints = 0, hpoints = 0;
+int vpoints = 0, hpoints = 0;
 
 
-int vlow = 95, vhigh = 105, hright = 90, hleft = 109; //scan area
+int vlow = 89, vhigh = 101, hright = 85, hleft = 95; //scan area
 boolean crs = 0; //comma removal system =D
 int zCenter = 0; //offset to center the object in the VRML viewer
 int avgFilter = 0;
-char palette[][16] = {"0.07 0.16 0.35,","0.14 0.30 0.65,","0.27 0.49 0.73,","0.30 0.40 0.29,","0.25 0.62 0.18"};
-int nb_step = 5;
-int zmin = 4000;
-int zmax = 0;
+//char palette[][16] = {"0.07 0.16 0.35,","0.14 0.30 0.65,","0.27 0.49 0.73,","0.30 0.40 0.29,","0.25 0.62 0.18"};
+char palette[][16] = {"0.20 0.20 0.20,","0.24 0.24 0.24,","0.28 0.28 0.28,","0.32 0.32 0.32,","0.36 0.36 0.36,","0.40 0.40 0.40,","0.44 0.44 0.44,","0.48 0.48 0.48,","0.52 0.52 0.52,","0.56 0.56 0.56,","0.60 0.60 0.60,","0.64 0.64 0.64,","0.68 0.68 0.68,","0.72 0.72 0.72,","0.76 0.76 0.76,","0.80 0.80 0.80,","0.84 0.84 0.84,","0.88 0.88 0.88,","0.92 0.92 0.92,","0.96 0.96 0.96"};
+int nb_step = 20;//palette size
+float zmin = 4000;
+float zmax = 0;
 boolean dir = 0;
 int cmp = 0;
 int temp = 0;
-int pstep = 0;
+float pstep = 0;
 
 int medianFilter[5];
 int previousD = -9999;
@@ -159,7 +160,7 @@ void loop()
         {
           //Program stays in this loop until scan is complete
           Serial.println("Scan called");
-          webScanPage(client, 88);//display "scanning: 0%"
+          webScanPage(client, 0);//display "scanning: 0%"
 
           scan(vlow, vhigh, hright, hleft, client);//also pass client so it can update the webpage
         }

@@ -8,7 +8,8 @@ void scan(int vl, int vh, int hl, int hh, EthernetClient client)//moves the serv
   
   vpoints = vh - vl + 1;//number of points per collumn
   hpoints = hh - hl + 1;//number of points per line
-  int couleur [hpoints*vpoints];
+  
+  float couleur [hpoints*vpoints];
   int colindex [8 * ((hpoints -1) * (vpoints -1)) - 1 ]; //nombre de coins dans les faces + espaces entre les faces
 
   int d;
@@ -40,7 +41,7 @@ void scan(int vl, int vh, int hl, int hh, EthernetClient client)//moves the serv
         couleur [cmp]= z;
         cmp++;
       }
-          webScanPage(client, ((v-vl)*100)/(vh-vl));//try to update webpage
+         // webScanPage(client, ((v-vl)*100)/(vh-vl));//try to update webpage
     }
     else
     {
@@ -57,7 +58,7 @@ void scan(int vl, int vh, int hl, int hh, EthernetClient client)//moves the serv
         cmp++;
         
       }
-          webScanPage(client, ((v-vl)*100)/(vh-vl));//try to update webpage
+       //   webScanPage(client, ((v-vl)*100)/(vh-vl));//try to update webpage
     }
     dir = !dir;//toggle dir
   }
@@ -116,31 +117,38 @@ void scan(int vl, int vh, int hl, int hh, EthernetClient client)//moves the serv
     //       ### color {} TO COLORIZE ###
     
     myFile.println("color Color {\n color[ ");
-    myFile.print(palette[0]);
-    myFile.print(palette[1]);
-    myFile.print(palette[2]);
-    myFile.print(palette[3]);
-    myFile.print(palette[4]);
+    for(int i = 0; i < nb_step; i++)
+      myFile.print(palette[i]);
     myFile.println("]\n}\n");
     
     //    ### color {} TO COLORIZE ###
    
     //       ### colorIndex {} ###
     myFile.println("colorIndex [ ");
-    pstep = (zmax - zmin)/nb_step;
-    for (int n=0; n < (hpoints * vpoints - 1); n++)
+    pstep = (zmax - zmin)/nb_step;//
+        Serial.print("zmax:");
+        Serial.println(zmax);
+        Serial.print("zmin:");
+        Serial.println(zmin);
+        Serial.print("pstep:");
+        Serial.println(pstep);
+    for (int n=0; n < (hpoints * vpoints); n++)
     {
-        if (couleur[n] < (zmin + pstep))
-          couleur[n]= 0;
-        else if (couleur[n] < (zmin + pstep*2))
-          couleur[n]= 1;
-        else if (couleur[n] < (zmin + pstep*3))
-          couleur[n]= 2;
-        else if (couleur[n] < (zmin + pstep*4))
-          couleur[n]= 3;
-        else
-          couleur[n]= 4;
-        //Serial.println(couleur[n]);
+      int tmp = 8888;
+      Serial.print("couleur[");
+      Serial.print(n);
+      Serial.print("]: ");
+      Serial.print(couleur[n]);
+      Serial.print("\t");
+      for(int i = 0; i < nb_step; i++)
+      {
+        if ((couleur[n] > ((zmin + i*pstep)-0.01)) && (couleur[n] < ((zmin + (i+1)*pstep)+0.01)))
+         {
+          tmp = i;
+         }
+      }
+      couleur[n] = tmp;
+      Serial.println(couleur[n]);
     }
 
     int colorfilter = 0;
@@ -149,11 +157,14 @@ void scan(int vl, int vh, int hl, int hh, EthernetClient client)//moves the serv
     {
 //        if ((colindex[l] > 4) || (colindex[l] < 0))
 //          colindex[l] = couleur[colindex[l] - 1];
-        colindex[l] = couleur[colindex[l]];
-        if (abs(colindex[l] - colorfilter) > nb_step)
-          colindex[l] = colorfilter;
-          colorfilter = colindex[l];
+
         Serial.print("colindex : ");
+        Serial.print(colindex[l]);
+        colindex[l] = couleur[colindex[l]];
+        /*if (abs(colindex[l] - colorfilter) > nb_step)//???
+          colindex[l] = colorfilter;
+          colorfilter = colindex[l];*/
+        Serial.print("\tcolindex : ");
         Serial.println(colindex[l]);
         myFile.print(colindex[l]);
         myFile.print(" ");
@@ -225,7 +236,7 @@ void measureDist(int v, int h)//measure distance and store it to SD card
     myFile.print("\t");
     myFile.print(y/10.0);
     myFile.print("\t");
-    myFile.print((z)/10.0);//put central point in the 0,0,0 position
+    myFile.print(z/10.0);//put central point in the 0,0,0 position
     
  Serial.println(11);
     
@@ -270,3 +281,18 @@ else
 x = -x;
 //z = -z;
 }
+
+/*
+void spatialTransform(int v, int h, int d)//transform polar coordinates to cartesian ones
+{
+  //use global variable to pass result back to parent function
+  //slight fluctuations at v = 90
+  
+float rho = d;
+float theta = -1.5707963 + h*3.1415926/180.0;
+float phi = 3.1415926 - (v)*3.1415926/180.0;
+
+x = -rho*cos(theta)*sin(phi);
+y = rho*sin(theta)*sin(phi);
+z = rho*cos(phi);
+}*/
