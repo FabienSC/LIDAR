@@ -139,7 +139,7 @@ void scan(int vl, int vh, int hl, int hh, EthernetClient client)//moves the serv
       Serial.print(n);
       Serial.print("]: ");
       Serial.print(couleur[n]);
-      Serial.print("\t");
+      Serial.print("\t-> ");
       for(int i = 0; i < nb_step; i++)
       {
         if ((couleur[n] > ((zmin + i*pstep)-0.01)) && (couleur[n] < ((zmin + (i+1)*pstep)+0.01)))
