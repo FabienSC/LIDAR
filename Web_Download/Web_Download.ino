@@ -47,7 +47,6 @@ int vpoints = 0, hpoints = 0;
 int vlow = 85, vhigh = 130, hright = 70, hleft = 110; //scan area
 //int vlow = 90, vhigh = 96, hright = 85, hleft = 95; //scan area
 boolean crs = 0; //comma removal system =D
-//int zCenter = 0; //offset to center the object in the VRML viewer
 //char palette[][16] = {"0.07 0.16 0.35,","0.14 0.30 0.65,","0.27 0.49 0.73,","0.30 0.40 0.29,","0.25 0.62 0.18"};
 //char palette[][16] = {"0.20 0.20 0.20,","0.24 0.24 0.24,","0.28 0.28 0.28,","0.32 0.32 0.32,","0.36 0.36 0.36,","0.40 0.40 0.40,","0.44 0.44 0.44,","0.48 0.48 0.48,","0.52 0.52 0.52,","0.56 0.56 0.56,","0.60 0.60 0.60,","0.64 0.64 0.64,","0.68 0.68 0.68,","0.72 0.72 0.72,","0.76 0.76 0.76,","0.80 0.80 0.80,","0.84 0.84 0.84,","0.88 0.88 0.88,","0.92 0.92 0.92,","0.96 0.96 0.96"};//white = far, black = near
 char palette[][16] = {"1.00 1.00 1.00,","0.96 0.96 0.96,","0.92 0.92 0.92,","0.88 0.88 0.88,","0.84 0.84 0.84,","0.80 0.80 0.80,","0.76 0.76 0.76,","0.72 0.72 0.72,","0.68 0.68 0.68,","0.64 0.64 0.64,","0.60 0.60 0.60,","0.56 0.56 0.56,","0.52 0.52 0.52,","0.48 0.48 0.48,","0.44 0.44 0.44,","0.40 0.40 0.40,","0.36 0.36 0.36,","0.32 0.32 0.32,","0.28 0.28 0.28,","0.24 0.24 0.24"};//black = far, white = near
@@ -67,8 +66,8 @@ void setup()//#######################
   pinMode(10, OUTPUT);     // set the SS pin as an output (necessary!)
   digitalWrite(10, HIGH);  // but turn off the W5100 chip!
   
-  pinMode(12, INPUT);      // scan button
-  digitalWrite(12, HIGH);  // pullup
+  pinMode(13, INPUT);      // scan button
+  digitalWrite(13, HIGH);  // pullup
 
   myLidarLite.begin();
   servoH.attach(SERVOH_PIN);
@@ -98,7 +97,7 @@ void loop()
   int index = 0;
   EthernetClient client = server.available();
 
-  if(digitalRead(12) == 0)//button pressed
+  if(digitalRead(13) == 0)//button pressed
     {
       client.connected();
       client.stop();

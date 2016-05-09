@@ -223,6 +223,9 @@ void measureDist(int v, int h)//measure distance and store it to SD card
       d = medianFilter[2];//take the median value
     }
     previousD = d;
+
+
+  //if (d < 10)
   
   Serial.print(h);
   Serial.print(" - ");
