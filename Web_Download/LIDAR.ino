@@ -207,31 +207,37 @@ void measureDist(int v, int h)//measure distance and store it to SD card
 {
   int d = myLidarLite.distance();
   if ((d - previousD) > 50)//if bigger than 50cm
+  {
+    for(int i = 0; i < 5; i++)
     {
-      for(int i = 0; i < 5; i++)
-      {
-        medianFilter[i] = myLidarLite.distance();
-      }
-      for(int i = 4; i > 0; i--)
-        for(int j = 0; j < i; j++)
-            if(medianFilter[j] > medianFilter[j+1])
-              {
-                int tmp = medianFilter[j];
-                medianFilter[j] = medianFilter[j+1];
-                medianFilter[j+1] = tmp;
-              }
-      d = medianFilter[2];//take the median value
+      medianFilter[i] = myLidarLite.distance();
     }
+    for(int i = 4; i > 0; i--)
+      for(int j = 0; j < i; j++)
+          if(medianFilter[j] > medianFilter[j+1])
+          {
+            int tmp = medianFilter[j];
+            medianFilter[j] = medianFilter[j+1];
+            medianFilter[j+1] = tmp;
+          }
+    d = medianFilter[2];//take the median value
+  }
+
+
+  if (d < 10)
+    d = max(zmax,previousD);
+  else
     previousD = d;
 
-
-  //if (d < 10)
-  
+    
   Serial.print(h);
   Serial.print(" - ");
   Serial.print(v);
   Serial.print(" / d = ");
   spatialTransform(v,h,d);
+
+  
+    
   
   Serial.println(d);
   if (myFile)
