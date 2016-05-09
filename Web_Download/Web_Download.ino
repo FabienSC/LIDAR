@@ -1,5 +1,5 @@
-//improving...
-//latest: 2016-04-25
+//Done
+//latest: 2016-05-09
 
 #include <SD.h>
 #include <Ethernet.h>
@@ -59,7 +59,6 @@ float pstep = 0;
 
 unsigned int medianFilter[5];
 int previousD;
-
 
 void setup()//#######################
 {

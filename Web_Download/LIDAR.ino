@@ -23,7 +23,6 @@ int previousD = -9999;
   hpoints = hh - hl + 1;//number of points per line
   Serial.println(hpoints*vpoints);
   
-  float couleur [hpoints*vpoints];
   char color [hpoints*vpoints];
   
   int d;
@@ -114,8 +113,8 @@ int previousD = -9999;
             }
           }
         }
-       }
-      color[n] = tmp;
+      }
+     color[n] = tmp;
     }
       
   if (myFile)
@@ -178,7 +177,7 @@ for (int line = 0; line < vpoints-1; line++)
         myFile.print(" ");
         myFile.print((int)color[2 * hpoints - i - 1 + offset]);
         myFile.print(" ");
-        myFile.print((int)color[0]);
+        myFile.print((int)color[0]);//useless data
         myFile.print(" ");
         
         myFile.print((int)color[i - 1 + offset]);
